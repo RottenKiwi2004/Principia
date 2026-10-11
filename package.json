@@ -1,0 +1,36 @@
+{
+  "name": "principia",
+  "version": "0.2.0",
+  "private": true,
+  "description": "A VS Code style workspace for notes folders: structured topics, Markdown, MDX and live React components",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "check": "tsx scripts/check.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/jetbrains-mono": "5.3.0",
+    "@fontsource/source-sans-3": "5.3.0",
+    "@mdx-js/mdx": "3.1.1",
+    "dockview-react": "8.4.1",
+    "katex": "0.16.11",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "rehype-katex": "7.0.1",
+    "remark-frontmatter": "5.0.0",
+    "remark-gfm": "4.0.1",
+    "remark-math": "6.0.0",
+    "sucrase": "3.35.1"
+  },
+  "devDependencies": {
+    "@types/katex": "0.16.8",
+    "@types/node": "^22.0.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "tsx": "4.23.15",
+    "typescript": "~5.9.0"
+  }
+}

@@ -1,0 +1,1051 @@
+/* Dark theme only. Text that used to be handwriting is set in Computer Modern (KaTeX_Main), the same face as the equations. */
+:root {
+  --ground: #0e1218;
+  --paper: #161b25;
+  --chrome: #0b0f15;
+  --ink: #e8ecf3;
+  --ink-2: #a3adbf;
+  --rule: #2a3241;
+  --flag-bg: #232b3a;
+  --target: #3d3616;
+  --teal: #4fc6d1;
+  --green: #7ad07f;
+  --orange: #f59a4d;
+  --pink: #f07ab8;
+  --red: #ff7b82;
+  --purple: #b49bff;
+  --orange-wash: #3a2616;
+  --red-wash: #3b1a1e;
+  --f-tex: KaTeX_Main, 'Latin Modern Roman', 'CMU Serif', 'Computer Modern', Georgia, 'Times New Roman', serif;
+  --f-body: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --scroll-thumb: #2a3241; /* same as --rule: close to the background, so the bar recedes */
+  --scroll-thumb-hover: #3a4458;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* ---- scrollbars: a thin bar with no visible track, in a colour just above the background ---- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) transparent;
+}
+/* Browsers without the standard properties (Safari before 18.2) get the same look from the WebKit pseudo-elements. */
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 6px;
+    background: var(--scroll-thumb) padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--scroll-thumb-hover) padding-box;
+  }
+}
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font: 16px/1.55 var(--f-body);
+  -webkit-font-smoothing: antialiased;
+}
+button {
+  font: inherit;
+  color: inherit;
+}
+:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 2px;
+}
+
+/* ---- shell: explorer on the left, dockview on the right ------------------------- */
+.shell {
+  --ex-w: 300px;
+  display: grid;
+  grid-template-columns: var(--ex-w) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  position: fixed;
+  inset: 0;
+  overflow: clip;
+}
+.shell[data-explorer='closed'] {
+  --ex-w: 40px;
+}
+.dock {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: clip;
+}
+/* The dock fills its grid cell exactly and can never be scrolled: overflow: clip (unlike hidden) also blocks
+   scrolling by focus, find-in-page or scrollIntoView, which would otherwise push the tab strips off the top. */
+.dock-fill {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+}
+.dock-root {
+  width: 100%;
+  height: 100%;
+}
+.dock .dv-groupview,
+.dock .dv-split-view-container,
+.dock .dv-view {
+  overflow: clip !important; /* dockview sets overflow: hidden inline on groups */
+}
+.dock .dv-view {
+  max-height: 100%;
+}
+/* Each pane is pinned to its group's content area, so its height never depends on its content. */
+.dock .dv-content-container {
+  position: relative;
+}
+.dock-loading {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: var(--ink-2);
+}
+
+/* ---- clock: small, quiet, in LaTeX type; clicks pass through it ---------------- */
+.clock {
+  position: fixed;
+  right: 12px;
+  bottom: 8px;
+  z-index: 50;
+  padding: 3px 8px;
+  border: 1px solid #5a6883; /* a step lighter than --rule */
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  color: var(--ink-2);
+  font: 400 12px/1 var(--f-tex);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  opacity: 0.75;
+  /* pointer-events: none; */
+  transition: 0.3s;
+  user-select: none;
+}
+
+.clock:hover {
+  color:var(--teal);
+  text-shadow: 0 0 3px var(--teal);
+  background: color-mix(in srgb, var(--paper), white 8%);
+  transition: 0.3s;
+}
+
+/* ---- explorer -------------------------------------------------------------------- */
+.explorer {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--chrome);
+  border-right: 1px solid var(--rule);
+  color: var(--ink-2);
+  font: 13px/1.4 var(--f-body);
+}
+.ex-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.5rem 0.5rem 0.85rem;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.explorer.is-collapsed .ex-top {
+  justify-content: center;
+  padding: 0.5rem 0;
+}
+.ex-icon-btn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.ex-icon-btn:hover {
+  background: var(--flag-bg);
+  color: var(--ink);
+}
+.ex-tree {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: 0.75rem;
+}
+.ex-actions {
+  display: flex;
+  gap: 2px;
+}
+/* tree rows: folders (chevron + folder icon) and files (topic or identity index) */
+.ex-folder {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.5rem 0.28rem 6px;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  text-align: left;
+  cursor: pointer;
+}
+.ex-folder:hover {
+  background: var(--flag-bg);
+  color: var(--ink);
+}
+.ex-folder.is-course {
+  color: var(--ink);
+  font-weight: 600;
+}
+.ex-label {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ex-item {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding-right: 0.4rem;
+}
+.ex-item:hover,
+.ex-item:focus-within {
+  background: var(--flag-bg);
+}
+.ex-item.is-active {
+  background: #1e2533;
+  box-shadow: inset 2px 0 0 var(--purple);
+}
+.ex-open {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.28rem 0.2rem;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.ex-open svg,
+.ex-folder svg {
+  flex: none;
+}
+.ex-hint-chip {
+  display: none;
+  flex: none;
+  color: var(--ink-2);
+  font: 11px var(--f-mono);
+}
+.ex-item:hover .ex-hint-chip,
+.ex-item.is-active .ex-hint-chip {
+  display: inline;
+}
+.ex-side {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink-2);
+  opacity: 0;
+  cursor: pointer;
+}
+.ex-item:hover .ex-side,
+.ex-side:focus-visible {
+  opacity: 1;
+}
+.ex-side:hover {
+  background: var(--rule);
+  color: var(--ink);
+}
+.ex-foot {
+  padding: 0.7rem 0.85rem 0.85rem;
+  border-top: 1px solid var(--rule);
+}
+.ex-hint {
+  margin: 0 0 0.6rem;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.ex-hint code {
+  padding: 0.05rem 0.25rem;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--flag-bg);
+  color: var(--ink);
+  font: 600 11px var(--f-mono);
+}
+.ex-reset {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: none;
+  color: var(--ink-2);
+  font-size: 12px;
+  cursor: pointer;
+}
+.ex-reset:hover {
+  border-color: var(--purple);
+  color: var(--purple);
+}
+
+/* ---- dockview theme: map its variables onto the notes palette ---------------------- */
+.dock .dockview-theme-dark {
+  --dv-group-view-background-color: var(--ground);
+  --dv-tabs-and-actions-container-background-color: var(--chrome);
+  --dv-activegroup-visiblepanel-tab-background-color: var(--paper);
+  --dv-activegroup-hiddenpanel-tab-background-color: var(--chrome);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--paper);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--chrome);
+  --dv-activegroup-visiblepanel-tab-color: var(--ink);
+  --dv-activegroup-hiddenpanel-tab-color: var(--ink-2);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--ink-2);
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--ink-2);
+  --dv-tab-divider-color: var(--rule);
+  --dv-separator-border: var(--rule);
+  --dv-sash-color: var(--rule);
+  --dv-active-sash-color: var(--purple);
+  --dv-drag-over-background-color: rgba(180, 155, 255, 0.18);
+  --dv-drag-over-border-color: var(--purple);
+  --dv-icon-hover-background-color: rgba(255, 255, 255, 0.1);
+  --dv-tabs-container-scrollbar-color: var(--scroll-thumb); /* tab strip, when there are too many tabs */
+  --dv-scrollbar-background-color: var(--scroll-thumb); /* dockview's own overlay scrollbars */
+  --dv-tab-font-size: 13px;
+}
+.dock .dv-tab {
+  font-family: var(--f-body);
+}
+.dock .dv-active-group .dv-tab.dv-active-tab {
+  box-shadow: inset 0 2px 0 var(--purple);
+}
+
+/* ---- a panel is one notebook sheet that scrolls inside its dock tab ------------------ */
+.panel {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  padding: 20px clamp(10px, 2cqi, 28px) 40px;
+  background: var(--ground);
+  container-type: inline-size;
+}
+.sheet {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: clamp(16px, 4cqi, 40px);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+.course {
+  display: inline-block;
+  margin: 0 0 0.5rem;
+  border-bottom: 2px solid var(--ink);
+  font: 400 1.25rem/1.2 var(--f-tex);
+}
+h1 {
+  margin: 0;
+  font: 700 clamp(1.7rem, 6cqi, 2.7rem) / 1.12 var(--f-tex);
+  text-wrap: balance;
+}
+h1 .subt {
+  margin-left: 0.3em;
+  color: var(--teal);
+  font-size: 0.62em;
+  font-style: italic;
+  font-weight: 400;
+}
+.lede {
+  max-width: 65ch;
+  margin: 0.9rem 0 0;
+  color: var(--ink-2);
+}
+.pens {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.45rem 1.4rem;
+  margin: 1.3rem 0 0;
+  padding: 1rem 0 0;
+  border-top: 1px solid var(--rule);
+  list-style: none;
+  color: var(--ink-2);
+  font-size: 0.9rem;
+}
+.pens li {
+  display: flex;
+  min-width: 0;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+.pens .dot {
+  flex: none;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+}
+.pens b {
+  color: var(--ink);
+  font: 700 1.05rem/1 var(--f-tex);
+}
+.bg-teal { background: var(--teal); }
+.bg-green { background: var(--green); }
+.bg-orange { background: var(--orange); }
+.bg-pink { background: var(--pink); }
+.bg-red { background: var(--red); }
+.bg-purple { background: var(--purple); }
+
+/* sections */
+.sec {
+  margin-top: 2.6rem;
+  scroll-margin-top: 12px;
+}
+.sec.is-focus > .sec-head {
+  border-radius: 2px;
+  background: var(--target);
+  box-shadow: 0 0 0 0.5rem var(--target);
+}
+h2 {
+  display: flex;
+  margin: 0;
+  gap: 0.65rem;
+  align-items: center;
+  color: var(--purple);
+  font: 700 1.5rem/1.2 var(--f-tex);
+}
+h2 .t {
+  border-bottom: 2px solid var(--purple);
+}
+h2 .katex {
+  font-size: 1em;
+}
+.circ {
+  display: inline-grid;
+  place-items: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  margin-right: 0.2rem;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  font: 700 0.85rem/1 var(--f-tex);
+}
+.circ-btn {
+  padding: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.circ-btn:hover {
+  color: var(--purple);
+}
+
+/* "Why are we doing this?" under a purple heading: purple question (sub-heading), teal answer (comment) */
+.why-block {
+  margin-top: 0.6rem;
+  padding-left: 0.85rem;
+  border-left: 2px solid color-mix(in srgb, var(--purple) 55%, transparent);
+}
+.why-q {
+  margin: 0;
+  color: var(--purple);
+  font: italic 400 0.95rem/1.4 var(--f-tex);
+}
+.why-a {
+  max-width: 72ch;
+  margin: 0.1rem 0 0;
+  color: var(--teal);
+  font: 400 1.06rem/1.45 var(--f-tex);
+}
+.why-a .katex {
+  font-size: 1em;
+}
+header .why-block {
+  margin-top: 0.9rem;
+}
+
+/* topic header breadcrumb: lecture / deck folders */
+.crumbs {
+  margin: 0 0 0.35rem;
+  color: var(--ink-2);
+  font: 12px/1.3 var(--f-mono);
+}
+
+/* plain bullet (ink) and green "Ex." lines */
+.note-text,
+.note-ex {
+  margin: 0;
+  font: 400 1.06rem/1.45 var(--f-tex);
+}
+.note-text {
+  position: relative;
+  padding-left: 1.05em;
+  color: var(--ink);
+}
+.note-text::before {
+  content: '–';
+  position: absolute;
+  left: 0;
+  color: var(--ink-2);
+}
+.note-ex {
+  color: var(--green);
+}
+.ex-tag {
+  font-weight: 700;
+}
+.note-text .katex,
+.note-ex .katex {
+  font-size: 1em;
+}
+.nonexam {
+  align-self: center;
+  padding: 0.15rem 0.45rem;
+  border: 1px dashed var(--ink-2);
+  border-radius: 3px;
+  color: var(--ink-2);
+  font: 600 0.72rem/1 var(--f-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* slide references */
+.slideref {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.5rem;
+  margin-top: 0.6rem;
+}
+.sref {
+  display: inline-flex;
+  min-width: 0;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+.sref b {
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--ink-2);
+  border-radius: 3px;
+  background: var(--flag-bg);
+  color: var(--ink);
+  font: 600 0.74rem/1 var(--f-mono);
+  white-space: nowrap;
+}
+.sref em {
+  color: var(--ink-2);
+  font: italic 400 1rem/1.35 var(--f-tex);
+}
+.slidenote {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--teal);
+  font: 400 1.02rem/1.4 var(--f-tex);
+}
+.slidenote .katex {
+  font-size: 1em;
+}
+
+/* derivation rows: equation on the left, tags / shapes / pen notes on the right */
+.rows {
+  margin-top: 0.8rem;
+  border-top: 1px solid var(--rule);
+}
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 0.4rem 1.6rem;
+  align-items: center;
+  padding-block: 0.75rem;
+  border-bottom: 1px solid var(--rule);
+}
+.eq {
+  min-width: 0;
+  padding-block: 0.2rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.eq .katex {
+  font-size: 1.18em;
+}
+.note {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.note p,
+.notes-inline p {
+  margin: 0;
+}
+.flag {
+  display: inline-block;
+  margin-right: 0.4rem;
+  padding: 0.2rem 0.38rem;
+  border: 1px solid var(--ink-2);
+  border-radius: 3px;
+  background: var(--flag-bg);
+  color: var(--ink);
+  font: 600 0.74rem/1 var(--f-mono);
+  vertical-align: 0.12em;
+  cursor: pointer;
+}
+.flag:hover {
+  border-color: var(--purple);
+  color: var(--purple);
+}
+.lab,
+.con,
+.warn,
+.term {
+  font: 400 1.06rem/1.4 var(--f-tex);
+}
+.lab .katex,
+.con .katex,
+.warn .katex,
+.term .katex {
+  font-size: 1em;
+}
+.lab { color: var(--teal); }
+.con { color: var(--orange); }
+.warn { color: var(--red); }
+.term { color: var(--pink); font-size: 1.15rem; font-weight: 700; }
+.shape {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  color: var(--green);
+}
+.shape .katex {
+  font-size: 1.02em;
+}
+.scroll {
+  margin-top: 0.8rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.scroll .katex-display {
+  margin: 0.5em 0;
+  text-align: left;
+}
+.scroll .katex-display > .katex {
+  text-align: left;
+}
+.notes-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.4rem;
+}
+
+/* pen colours inside equations (\htmlClass{c-red}{...}) */
+.katex .c-teal { color: var(--teal); }
+.katex .c-green { color: var(--green); }
+.katex .c-orange { color: var(--orange); }
+.katex .c-pink { color: var(--pink); }
+.katex .c-red { color: var(--red); }
+.katex .c-purple { color: var(--purple); }
+
+.callout {
+  margin-top: 1rem;
+  padding: 0.9rem 1.1rem;
+  background: var(--red-wash);
+  border: 1px solid var(--red);
+}
+.callout p {
+  margin: 0;
+}
+.callout .katex {
+  font-size: 1.08em;
+}
+.callout-h {
+  margin-bottom: 0.35rem !important;
+  color: var(--red);
+  font: 700 1.15rem/1.3 var(--f-tex);
+}
+
+/* identity index rows */
+.idx {
+  display: grid;
+  grid-template-columns: 3.6rem minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 0.3rem 1.4rem;
+  align-items: center;
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid var(--rule);
+  transition: background-color 0.35s ease; /* fade the highlight in and out when the focused identity changes */
+}
+/* identity index: grouped by area, "used in" chips link to topic sections */
+.idx-area {
+  margin-top: 1.8rem;
+}
+.idx-area-h {
+  margin: 0;
+  color: var(--ink-2);
+  font: 600 0.78rem/1 var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.use-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0.15rem 0.3rem 0 0;
+  padding: 0.1rem 0.25rem 0.1rem 0.45rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--flag-bg);
+  color: var(--ink);
+  font: 0.78rem/1.3 var(--f-body);
+  cursor: pointer;
+}
+.use-chip:hover {
+  border-color: var(--purple);
+  color: var(--purple);
+}
+.use-chip .circ {
+  margin: 0;
+}
+.sec-no {
+  padding-right: 0.2rem;
+  color: var(--ink-2);
+  font: 0.72rem var(--f-mono);
+}
+.idx.is-focus {
+  background: var(--target);
+}
+.idx .tag {
+  font: 600 0.95rem/1 var(--f-mono);
+}
+.idx .stmt {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.idx .stmt .katex {
+  font-size: 1.1em;
+}
+.idx .why {
+  min-width: 0;
+  color: var(--ink-2);
+  font-size: 0.95rem;
+}
+.idx .why p {
+  margin: 0;
+}
+.idx .why .katex {
+  font-size: 1.08em;
+}
+.idx .used {
+  margin-top: 0.25rem !important;
+  font-size: 0.8rem;
+}
+.idx .circ {
+  width: 1.25rem;
+  height: 1.25rem;
+  font-size: 0.72rem;
+}
+
+.foot {
+  margin: 2.4rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-2);
+  font-size: 0.92rem;
+}
+
+/* ---- buttons ---------------------------------------------------------------------------- */
+.btn {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--flag-bg);
+  color: var(--ink);
+  font: 13px/1.3 var(--f-body);
+  cursor: pointer;
+}
+.btn:hover {
+  border-color: var(--purple);
+  color: var(--purple);
+}
+.btn-primary {
+  border-color: color-mix(in srgb, var(--purple) 60%, transparent);
+  background: color-mix(in srgb, var(--purple) 18%, var(--paper));
+}
+
+/* ---- welcome page, shown in the dock when no tab is open ---------------------------------- */
+.welcome {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 24px;
+  overflow: auto;
+  background: var(--ground);
+}
+.welcome-card {
+  max-width: 620px;
+}
+.welcome-card h1 {
+  font-size: 2.4rem;
+}
+.welcome-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.2rem 0;
+}
+.welcome-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--ink-2);
+  font-size: 0.95rem;
+}
+.welcome-list li + li {
+  margin-top: 0.35rem;
+}
+.welcome-list b {
+  color: var(--ink);
+  font: 600 0.85rem var(--f-mono);
+}
+.welcome-list code,
+.prose :not(pre) > code {
+  padding: 0.05rem 0.3rem;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--flag-bg);
+  font: 0.85em var(--f-mono);
+}
+.welcome-note {
+  margin: 1rem 0 0;
+  color: var(--ink-2);
+  font-size: 0.85rem;
+}
+
+/* ---- explorer: one root per open folder ------------------------------------------------------- */
+.ex-root + .ex-root {
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--rule);
+}
+.ex-root-row {
+  display: flex;
+  align-items: center;
+  padding-right: 0.4rem;
+}
+.ex-root-row:hover {
+  background: var(--flag-bg);
+}
+.ex-root-row .ex-folder:hover {
+  background: none;
+}
+.ex-root-actions {
+  display: flex;
+  gap: 2px;
+}
+.ex-root-row:hover .ex-side,
+.ex-root-row:focus-within .ex-side {
+  opacity: 1;
+}
+.ex-status {
+  margin: 0.15rem 0.85rem 0.3rem 1.6rem;
+  color: var(--ink-2);
+  font-size: 12px;
+}
+.ex-status.is-error {
+  color: var(--red);
+  white-space: pre-wrap;
+}
+.ex-status-btn {
+  display: block;
+  padding: 0.3rem 0.5rem;
+  border: 1px dashed var(--purple);
+  border-radius: 4px;
+  background: none;
+  color: var(--purple);
+  text-align: left;
+  cursor: pointer;
+}
+.ex-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.5rem 0.85rem;
+}
+.ex-empty p {
+  margin: 0 0 0.2rem;
+}
+.ex-error-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--red);
+}
+.ex-item.has-error .ex-label {
+  color: var(--red);
+}
+
+/* ---- generic file panels ---------------------------------------------------------------------- */
+.fill {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+}
+.frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: white;
+}
+.doc-crumbs {
+  margin-bottom: 1rem;
+}
+.source {
+  margin: 0;
+  padding: 1rem;
+  overflow: auto;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--ground);
+  font: 13px/1.55 var(--f-mono);
+  tab-size: 2;
+}
+.error-text {
+  margin: 0.4rem 0 0;
+  white-space: pre-wrap;
+  font: 13px/1.5 var(--f-mono);
+}
+.media img,
+.media video {
+  display: block;
+  max-width: 100%;
+  margin: 0 auto;
+}
+.media audio {
+  width: 100%;
+}
+.extra {
+  margin-top: 1rem;
+}
+
+/* ---- prose: Markdown, MDX and component notes, in the same pens as the topics ------------------- */
+.prose {
+  font: 400 1.08rem/1.6 var(--f-tex);
+}
+.prose .katex {
+  font-size: 1.05em;
+}
+.prose h1 {
+  margin-bottom: 0.6rem;
+}
+.prose h2 {
+  display: table;
+  margin: 2.2rem 0 0.6rem;
+  border-bottom: 2px solid var(--purple);
+}
+.prose h3 {
+  margin: 1.6rem 0 0.4rem;
+  color: var(--teal);
+  font: 700 1.2rem/1.3 var(--f-tex);
+}
+.prose h4 {
+  margin: 1.2rem 0 0.3rem;
+  color: var(--pink);
+  font: 700 1.08rem/1.3 var(--f-tex);
+}
+/* :where keeps this weaker than the rules for notes, callouts and widgets placed inside the prose */
+.prose :where(p, ul, ol) {
+  margin: 0.6rem 0;
+}
+.prose li + li {
+  margin-top: 0.2rem;
+}
+.prose a {
+  color: var(--teal);
+}
+.prose blockquote {
+  margin: 0.9rem 0;
+  padding-left: 0.85rem;
+  border-left: 2px solid color-mix(in srgb, var(--purple) 55%, transparent);
+  color: var(--teal);
+}
+.prose hr {
+  margin: 2rem 0;
+  border: 0;
+  border-top: 1px solid var(--rule);
+}
+.prose pre {
+  padding: 0.9rem 1rem;
+  overflow: auto;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--ground);
+  font: 13px/1.55 var(--f-mono);
+}
+.prose img {
+  max-width: 100%;
+}
+.prose .katex-display {
+  margin: 0.9rem 0;
+  padding-block: 0.2rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.table-wrap {
+  margin: 0.9rem 0;
+  overflow-x: auto;
+}
+.prose table {
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+.prose th,
+.prose td {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--rule);
+  text-align: left;
+}
+.prose th {
+  background: var(--flag-bg);
+}
+.prose .rows {
+  margin-bottom: 0.8rem;
+}
+
+/* A narrow panel (a half-width split, say) stacks each row. The panel's own width decides, not the window's. */
+@container (max-width: 760px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .idx {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

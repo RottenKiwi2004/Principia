@@ -1,0 +1,60 @@
+import { R, lab, shape, tag } from 'principia'
+import LineFit from './widgets/LineFit'
+
+# Least squares, by hand
+
+This page is **MDX**: Markdown with components placed anywhere in the text. It retells steps 1, 5 and 6 of
+*Linear regression and least squares* and lets you move the data yourself.
+
+## The criterion
+
+For a line $\hat y_i=w_0+w_1x_i$, the residual of point $i$ is $\epsilon_i=y_i-\hat y_i$, and the loss adds up
+their squares:
+
+$$
+L(\mathbf w)=\sum_{i=1}^{N}\epsilon_i^2=\sum_{i=1}^{N}\big(y_i-w_0-w_1x_i\big)^2
+$$
+
+## Two equations, one matrix
+
+Setting $\partial L/\partial w_0$ and $\partial L/\partial w_1$ to zero gives two linear equations in $w_0,w_1$.
+Stacked, they are one matrix equation. The rows below are the same `Row` the structured topics use:
+
+<Row
+  eq={R`\begin{bmatrix} N & \sum_i x_i\\ \sum_i x_i & \sum_i x_i^2 \end{bmatrix}\begin{bmatrix} w_0\\ w_1 \end{bmatrix}=\begin{bmatrix} \sum_i y_i\\ \sum_i x_iy_i \end{bmatrix}`}
+  notes={[
+    tag(['I17'], R`entry $(j,k)$ of $X^\top X$ is column $j$ of $X$ dotted with column $k$`),
+    shape(R`(2\times2)(2\times1)=2\times1`),
+  ]}
+/>
+<Row
+  eq={R`\hat{\mathbf w}=(X^\top X)^{-1}X^\top\mathbf y`}
+  notes={[
+    tag(['I6'], R`the inverse exists when the $x_i$ are not all equal`),
+    lab('in code, solve the 2 by 2 system instead of inverting'),
+  ]}
+/>
+
+## Try it
+
+<LineFit />
+
+- Drag the points: the matrix entries, the weights and the loss follow.
+- Drag every point onto the same vertical line: the two columns of $X$ become dependent, and there is no unique
+  line any more <Flag id="I6" />.
+- Add a far-away point: one big residual, squared, pulls the whole line towards it.
+
+<Callout
+  heading="Exam trap"
+  flag="I17"
+  text={R`$X^\top X$ and $XX^\top$ are different matrices: $X^\top X$ is $2\times2$ (columns dotted with columns), $XX^\top$ is $N\times N$ (rows dotted with rows).`}
+/>
+
+## The shapes
+
+| Quantity | Shape | Why |
+|---|---|---|
+| $X$ | $N\times2$ | a column of 1s and a column of inputs |
+| $X^\top X$ | $2\times2$ | $(2\times N)(N\times2)$ |
+| $X^\top\mathbf y$ | $2\times1$ | $(2\times N)(N\times1)$ |
+| $\hat{\mathbf w}$ | $2\times1$ | one weight per column |
