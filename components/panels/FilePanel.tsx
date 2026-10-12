@@ -7,13 +7,14 @@ import { findTopic, folderTrail } from '@/lib/notebook/indexer';
 import { importModule, readFile, reconnect, type Notebook } from '@/lib/notebook/store';
 import { filePanelId } from '@/lib/workspace';
 import { useScrollMemory } from '@/lib/useScrollMemory';
-import { Callout, Circ, Flag, NoteLine, PanelContext, Row, SlideRefs, Why } from '../Notes';
+import { Callout, Circ, Flag, NoteLine, PanelContext, Row, SlideRefs, Step, Why } from '../Notes';
+import { StepScope } from '../StepScope';
 import { P, Tex } from '../Tex';
 import { TopicView } from './TopicPanel';
 
 /** Components every Markdown/MDX note can use without importing them, e.g. <Callout heading="Trap" text="..." />. */
 export const mdxComponents = {
-  Tex, P, Row, NoteLine, Callout, Why, SlideRefs, Flag, Circ,
+  Tex, P, Row, NoteLine, Callout, Why, SlideRefs, Flag, Circ, Step,
   table: (p: React.ComponentProps<'table'>) => (
     <div className="table-wrap">
       <table {...p} />
@@ -111,12 +112,18 @@ function ModuleView({ nb, path, kind, onReady }: { nb: Notebook; path: string; k
         </PanelContext.Provider>
       </Boundary>
     );
+    // `export const steps = 'blocks'`: every top-level element is a step. Otherwise only <Step> and data-step mark steps.
+    const steps = (
+      <StepScope panelId={panelId} blocks={exp.steps === 'blocks'}>
+        {body}
+      </StepScope>
+    );
     // `export const layout = 'full'` gives a component the whole panel, without the paper sheet around it.
-    if (exp.layout === 'full') return <div className="fill">{body}</div>;
+    if (exp.layout === 'full') return <div className="fill">{steps}</div>;
     return (
       <article className={'sheet prose' + (kind === 'script' ? ' is-component' : '')}>
         <Crumbs nb={nb} path={path} />
-        {body}
+        {steps}
       </article>
     );
   }
@@ -125,7 +132,16 @@ function ModuleView({ nb, path, kind, onReady }: { nb: Notebook; path: string; k
   if (topic)
     return (
       <Boundary path={path} reset={topic}>
-        <TopicView topic={topic} nbId={nb.id} path={path} notebookTitle={nb.title} folders={folderTrail(nb.config, path)} />
+        <StepScope panelId={panelId}>
+          <TopicView
+            topic={topic}
+            nbId={nb.id}
+            path={path}
+            notebookTitle={nb.title}
+            folders={folderTrail(nb.config, path)}
+            defaultSteps={nb.config.steps}
+          />
+        </StepScope>
       </Boundary>
     );
 

@@ -89,6 +89,23 @@ export class ModuleGraph {
     return this.execute(path) as Record<string, unknown>;
   }
 
+  /** The exports of a file that has already run, or undefined. Never compiles or runs anything. */
+  loaded(path: string) {
+    return this.modules.get(path)?.exports as Record<string, unknown> | undefined;
+  }
+
+  /** The files, among those compiled so far, that import `spec` (a builtin or npm name, or a resolved file path). */
+  importersOf(spec: string) {
+    const out: string[] = [];
+    for (const [p, c] of this.compiled)
+      for (const [s, r] of c.deps)
+        if (s === spec || (r.kind === 'file' && r.path === spec)) {
+          out.push(p);
+          break;
+        }
+    return out;
+  }
+
   /** Drops the given files and everything that imports them. Returns every dropped path. */
   invalidate(paths: Iterable<string>): Set<string> {
     const dirty = new Set(paths);

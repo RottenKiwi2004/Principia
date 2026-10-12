@@ -19,6 +19,16 @@ export type Note =
 
 export type RowData = { eq: string; notes: Note[] };
 
+/**
+ * How a topic is revealed, one step at a time, with the step controls (or the ← and → keys):
+ *   'section' a whole section per step
+ *   'rows'    the heading, then the display equation, the notes before the rows, each row, the extra and each
+ *             callout (the default)
+ *   'lines'   as 'rows', but a row shows its equation first and then one note line per step
+ *   'none'    everything at once
+ */
+export type StepMode = 'section' | 'rows' | 'lines' | 'none';
+
 /** A red box for a hidden step, a warning or an exam trap. `flag` links an identity. */
 export type Callout = { heading: string; flag?: string; text: string; eq?: string };
 
@@ -35,6 +45,7 @@ export type Section = {
   rows: RowData[]; //       derivation rows: equation left, notes right
   extra?: ReactNode; //     any React content (an interactive figure, a widget), placed after the rows
   callouts?: Callout[];
+  steps?: StepMode; //      how this section is revealed (default: the topic's)
 };
 
 export type Topic = {
@@ -45,6 +56,7 @@ export type Topic = {
   summary: string; //  the lede: what this topic covers, in one or two sentences
   sections: Section[];
   identities?: Identity[]; // identities first introduced by this topic; they join the notebook-wide index
+  steps?: StepMode; //  how the topic is revealed (default: the config's, else 'rows')
 };
 
 /** The usual areas, in index order. Any other string is allowed and is listed after these. */
@@ -74,4 +86,5 @@ export type NotebookConfig = {
   folders?: Record<string, string>; //        display titles for sub-folders, by path: { 'lecture-1': 'Lecture 1' }
   defaultFile?: string; //                    opened when the folder is first opened
   dependencies?: Record<string, string>; //   npm packages notes may import, with versions (loaded from esm.sh)
+  steps?: StepMode; //                         how topics are revealed step by step (default 'rows')
 };

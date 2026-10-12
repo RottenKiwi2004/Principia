@@ -309,6 +309,7 @@ export const glossary: Topic = {
   id: 'glossary',
   title: 'Symbol glossary',
   short: 'Glossary',
+  steps: 'none', // a reference page: shown all at once, no step controls
   summary: R`Every symbol from the lecture's glossary slides, with its meaning and its shape: data and dimensions, models, fitting and risk, local methods, and probability.`,
   sections,
 };

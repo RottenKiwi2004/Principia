@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { restoreNotebooks } from '@/lib/notebook/store';
 import { Explorer } from './Explorer';
 import { Clock } from './Clock';
+import { StepControls } from './StepControls';
 
 // Dockview measures the DOM and reads localStorage, so it only runs in the browser.
 const Dock = dynamic(() => import('./Dock'), {
@@ -37,6 +38,7 @@ export function Workspace() {
       <Explorer collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
       <div className="dock">
         <Dock />
+        <StepControls />
       </div>
       <Clock />
     </div>

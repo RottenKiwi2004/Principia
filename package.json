@@ -1,6 +1,6 @@
 {
   "name": "principia",
-  "version": "0.2.0",
+  "version": "0.5.0",
   "private": true,
   "description": "A VS Code style workspace for notes folders: structured topics, Markdown, MDX and live React components",
   "scripts": {
@@ -8,6 +8,8 @@
     "build": "next build",
     "start": "next start",
     "check": "tsx scripts/check.tsx",
+    "upgrade": "tsx scripts/upgrade.ts",
+    "test": "tsx scripts/test-upgrade.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

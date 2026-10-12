@@ -1,11 +1,21 @@
 // Reads a notebook: its config, then every script file, to find the structured topics. Used by the app and by
-// `npm run check`. A file that fails to load is recorded in `errors` and skipped; it does not stop the scan.
+// the scripts. A file that fails to load is recorded in `errors` and skipped; it does not stop the scan.
+// Older notes formats are read as they are (see lib/notebook/legacy.ts); `legacy` says what was found.
+import { isCourse, type Course } from '@/sdk/legacy';
 import type { NotebookConfig, Topic } from '@/sdk/types';
+import { LEGACY_ALIASES } from './builtins';
 import { fileKind } from './compile';
 import { CONFIG_FILES, buildIndex, findTopic, type NotebookIndex } from './indexer';
+import { configFromCourse } from './legacy';
 import { DeferredImport, ModuleError, type ModuleGraph } from './loader';
 
-export type Scan = { config: NotebookConfig; index: NotebookIndex; errors: Map<string, string> };
+export type Legacy = {
+  course?: { path: string; course: Course }; // a format-1 course file at the folder's root
+  nestedCourse?: string; //                     one deeper down: probably a whole Principia 0.1 app folder
+  aliased: string[]; //                         files importing '@/content/helpers' or '@/content/types'
+};
+
+export type Scan = { config: NotebookConfig; configPath?: string; index: NotebookIndex; errors: Map<string, string>; legacy: Legacy };
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -32,18 +42,30 @@ export async function scanNotebook(graph: ModuleGraph, files: string[]): Promise
   const allowNpm = (spec: string) => declared.has(packageName(spec));
 
   const found: { path: string; topic: Topic }[] = [];
+  const courses: { path: string; course: Course }[] = [];
   await Promise.all(
     files
       .filter((p) => fileKind(p) === 'script' && p !== configPath)
       .map(async (path) => {
         try {
-          const topic = findTopic(await graph.import(path, { allowNpm }));
+          const exports = await graph.import(path, { allowNpm });
+          const topic = findTopic(exports);
           if (topic) found.push({ path, topic });
+          const course = Object.values(exports).find(isCourse);
+          if (course) courses.push({ path, course });
         } catch (e) {
           if (!(e instanceof ModuleError && e.cause instanceof DeferredImport)) errors.set(path, message(e));
         }
       }),
   );
 
-  return { config, index: buildIndex(config, found), errors };
+  const legacy: Legacy = {
+    course: courses.find((c) => !c.path.includes('/')),
+    nestedCourse: courses.find((c) => c.path.includes('/'))?.path,
+    aliased: [...new Set(LEGACY_ALIASES.flatMap((a) => graph.importersOf(a)))].sort(),
+  };
+  // Format 1 has no config file: its course.ts plays that part.
+  if (!configPath && legacy.course) config = configFromCourse(legacy.course.course, found);
+
+  return { config, configPath, index: buildIndex(config, found), errors, legacy };
 }

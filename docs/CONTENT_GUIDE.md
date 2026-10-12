@@ -27,7 +27,7 @@ Script, Markdown and MDX files can import:
 |---|---|
 | `react`, `react-dom`, `react-dom/client` | the app's React: hooks and context work across notes |
 | `katex` | KaTeX |
-| `principia` | helpers (`R`, `lab`, `shape`, `tag`, `slide`, …), types (`Topic`, `Section`, …) and components (`Tex`, `P`, `Row`, `NoteLine`, `Callout`, `Why`, `SlideRefs`, `Flag`, `Circ`) |
+| `principia` | helpers (`R`, `lab`, `shape`, `tag`, `slide`, …), types (`Topic`, `Section`, …) and components (`Tex`, `P`, `Row`, `NoteLine`, `Callout`, `Why`, `SlideRefs`, `Flag`, `Circ`, `Step`) |
 | `./x`, `../x` | another file of the folder; the extension may be left out (`.tsx`, `.ts`, `.jsx`, `.js`, `.mdx`, `.md`, `.json`, or `x/index.*`) |
 | `~/x` | a file by its path from the folder's root |
 | `./data.json` | the parsed JSON |
@@ -58,8 +58,62 @@ export default defineNotebook({
   folders: { 'lecture-1': 'Lecture 1 · Introduction & regression' }, // display names of sub-folders
   defaultFile: 'lecture-1/regression-1/01-course-overview.ts',       // opened when the folder is opened
   dependencies: { d3: '7.9.0' },                       // npm packages, loaded from esm.sh
+  steps: 'rows',                                        // how topics are stepped through (see below)
 });
 ```
+
+## The version file
+
+`principia.version.json` at the folder's root says which notes format the notes are written in:
+
+```json
+{
+  "format": 2,
+  "app": "0.3.0",
+  "history": [{ "from": 1, "to": 2, "app": "0.3.0", "date": "…", "backup": ".principia/backup/…" }]
+}
+```
+
+The app writes it; there is no need to edit it. When a folder was last written by a newer app with the same
+format, the app says so: the notes may use features it does not have (such as `<Step>` before 0.4). A new folder gets one the first time it is opened. When the app's
+notes format is newer than the folder's, the folder is shown in compatibility mode and upgraded on open (or with
+`npm run upgrade -- <folder>`); the files it changes are first copied to `.principia/backup/<time>/`. See
+`CHANGELOG.md` for what each format changed.
+
+## Reading order
+
+The previous / next note buttons (and `Ctrl+←` `Ctrl+→`) follow the explorer order of a folder's structured
+topics and `.md` / `.mdx` pages. Other files (helper modules, widgets, the config, images…) are not in the
+sequence, so name files so that they sort in reading order (`01-…`, `02-…`).
+
+## Stepping through a note
+
+A note can be revealed a part at a time, like a slide build: the step bar at the bottom middle (or `←` `→`)
+adds or removes one step, and shows the stage out of the total. Content that is not a step is always shown.
+
+**Topics** step by themselves. `steps` in the config (all topics), a topic, or a section chooses how:
+
+| `steps` | Each step shows |
+|---|---|
+| `'rows'` (default) | the section heading (with its "why" and slides), then the display equation, the notes before the rows, each row, the extra, each callout |
+| `'lines'` | as `'rows'`, but a row shows its equation, then one note line per step |
+| `'section'` | a whole section |
+| `'none'` | nothing is stepped: the section (or topic) is shown at once |
+
+The topic's title, summary and pen key are always shown. A reference page (a glossary) is best with `steps: 'none'`.
+
+**MDX and components** mark their steps:
+
+```mdx
+<Step>Shown at the next step.</Step>
+<Step withPrevious>Shown together with the step before.</Step>
+<Step at={5}>Shown at step 5.</Step>
+Inline: the answer is <Step as="span">$42$</Step>.
+```
+
+Any element with a `data-step` attribute is a step too (`data-step=""` next, `"="` with the previous, `"3"` at
+step 3), so a component can mark its own parts: `<g data-step="">…</g>` in an SVG. In MDX,
+`export const steps = 'blocks'` makes every top-level block a step (the `h1` stays as the title).
 
 ## Components in notes
 
@@ -137,6 +191,7 @@ export const ridge: Topic = {
   short: 'Ridge',                   // ≤ 12 characters, for "used in" chips
   summary: R`One or two sentences: what this topic covers.`,
   identities,                       // identities this topic introduces (optional)
+  steps: 'rows',                    // how it is stepped through (optional; a section can override it)
   sections: [
     {
       id: 'objective',              // unique within the topic

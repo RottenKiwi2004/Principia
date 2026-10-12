@@ -10,6 +10,17 @@ export interface FileSource {
   list(): Promise<FileEntry[]>;
   readText(path: string): Promise<string>;
   readBlob(path: string): Promise<Blob>;
+  /** Writing is optional: only sources that can write have these, and canWrite() says if they may right now. */
+  canWrite?(): Promise<boolean>;
+  writeText?(path: string, text: string): Promise<void>;
+  remove?(path: string): Promise<void>;
+}
+
+export type WritableSource = FileSource & Required<Pick<FileSource, 'canWrite' | 'writeText' | 'remove'>>;
+
+/** True when `s` can write now (for a picked folder: the user granted edit permission). */
+export async function writable(s: FileSource | null): Promise<boolean> {
+  return !!s?.writeText && !!s.remove && !!s.canWrite && (await s.canWrite().catch(() => false));
 }
 
 export const skipDir = (name: string) => name.startsWith('.') || name === 'node_modules';
@@ -56,17 +67,35 @@ export class DirectorySource implements FileSource {
     return out;
   }
 
+  private async dir(parts: string[], create = false) {
+    let dir = this.handle;
+    for (const p of parts) dir = await dir.getDirectoryHandle(p, { create });
+    return dir;
+  }
   private async file(path: string) {
     const parts = path.split('/');
-    let dir = this.handle;
-    for (const p of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(p);
-    return (await dir.getFileHandle(parts[parts.length - 1])).getFile();
+    return (await (await this.dir(parts.slice(0, -1))).getFileHandle(parts[parts.length - 1])).getFile();
   }
   readText(path: string) {
     return this.file(path).then((f) => f.text());
   }
   readBlob(path: string): Promise<Blob> {
     return this.file(path);
+  }
+
+  async canWrite() {
+    return (await this.handle.queryPermission?.({ mode: 'readwrite' })) === 'granted';
+  }
+  async writeText(path: string, text: string) {
+    const parts = path.split('/');
+    const dir = await this.dir(parts.slice(0, -1), true);
+    const out = await (await dir.getFileHandle(parts[parts.length - 1], { create: true })).createWritable();
+    await out.write(text);
+    await out.close();
+  }
+  async remove(path: string) {
+    const parts = path.split('/');
+    await (await this.dir(parts.slice(0, -1))).removeEntry(parts[parts.length - 1]);
   }
 }
 

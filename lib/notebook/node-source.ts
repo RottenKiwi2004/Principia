@@ -1,9 +1,10 @@
-// A notebook folder on disk, read with Node's fs. For scripts (npm run check), never for the browser.
-import { readdir, readFile, stat } from 'node:fs/promises';
+// A notebook folder on disk, read and written with Node's fs. For scripts (npm run check, npm run upgrade),
+// never for the browser.
+import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { skipDir, type FileEntry, type FileSource } from './source';
+import { skipDir, type FileEntry, type WritableSource } from './source';
 
-export class NodeSource implements FileSource {
+export class NodeSource implements WritableSource {
   readonly live = true;
   readonly name: string;
   constructor(readonly root: string) {
@@ -30,5 +31,17 @@ export class NodeSource implements FileSource {
   }
   async readBlob(p: string) {
     return new Blob([new Uint8Array(await readFile(path.join(this.root, p)))]);
+  }
+
+  async canWrite() {
+    return true;
+  }
+  async writeText(p: string, text: string) {
+    const full = path.join(this.root, p);
+    await mkdir(path.dirname(full), { recursive: true });
+    await writeFile(full, text, 'utf8');
+  }
+  async remove(p: string) {
+    await rm(path.join(this.root, p));
   }
 }

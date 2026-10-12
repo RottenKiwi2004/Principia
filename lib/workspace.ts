@@ -1,6 +1,6 @@
 import type { DockviewApi } from 'dockview-react';
 import { createStore } from '@/lib/store';
-import { basename } from '@/lib/notebook/indexer';
+import { basename, comparePaths } from '@/lib/notebook/indexer';
 import { getNotebook } from '@/lib/notebook/store';
 import { fileKind } from '@/lib/notebook/compile';
 
@@ -97,6 +97,61 @@ export function defaultFile(nbId: string) {
 export function openDefault(nbId: string) {
   const path = defaultFile(nbId);
   if (path) openFile(nbId, path);
+}
+
+// ---- moving between notes -------------------------------------------------------------------
+/**
+ * The notes of a notebook in reading order: its structured topics and Markdown/MDX pages, in explorer order.
+ * Helper modules, widgets, config and other files are not notes (they can still be opened from the explorer).
+ */
+export function noteSequence(nbId: string) {
+  const nb = getNotebook(nbId);
+  if (!nb) return [];
+  return nb.files.map((f) => f.path).filter((p) => nb.index.byPath.has(p) || ['md', 'mdx'].includes(fileKind(p)));
+}
+
+/** The note after (dir 1) or before (dir -1) `path`, which need not be a note itself; undefined at either end. */
+export function adjacentNote(nbId: string, path: string, dir: 1 | -1) {
+  const seq = noteSequence(nbId);
+  return dir > 0 ? seq.find((p) => comparePaths(p, path) > 0) : [...seq].reverse().find((p) => comparePaths(p, path) < 0);
+}
+
+export const panelFile = (panelId: string | null) => {
+  const params = panelId ? apiRef?.getPanel(panelId)?.params : undefined;
+  return params && 'path' in params ? (params as { nbId: string; path: string }) : null;
+};
+
+/**
+ * Shows the next or previous note in place of file panel `panelId`: same group, same tab position, like
+ * following a link. A note that is already open elsewhere is just brought forward. False at either end.
+ */
+export function goToNote(panelId: string, dir: 1 | -1) {
+  const api = apiRef;
+  const panel = api?.getPanel(panelId);
+  const file = panelFile(panelId);
+  if (!api || !panel || !file) return false;
+  const next = adjacentNote(file.nbId, file.path, dir);
+  if (!next) return false;
+  const existing = api.getPanel(filePanelId(file.nbId, next));
+  if (existing) {
+    existing.api.setActive();
+    return true;
+  }
+  const spec = fileSpec(file.nbId, next);
+  const index = panel.group.panels.indexOf(panel);
+  api.addPanel({ ...spec, position: { referencePanel: panel.id, direction: 'within', index } });
+  api.removePanel(panel);
+  return true;
+}
+
+/**
+ * The file panel the bottom bar acts on: the active panel if it is a file, otherwise (say the identity index is
+ * active) the file that was active last, if it is still showing.
+ */
+export function currentFilePanel(active = activePanel.get()) {
+  if (active?.startsWith('file:')) return active;
+  const last = lastFilePanel ? apiRef?.getPanel(lastFilePanel) : undefined;
+  return last && last.group.activePanel?.id === last.id ? last.id : null;
 }
 
 /** Close every panel of a notebook (when the folder is closed). */

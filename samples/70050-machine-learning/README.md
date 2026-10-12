@@ -12,6 +12,7 @@ app to read them; edit any file and save it to see the change in a moment.
 | Path | Format | Shows |
 |---|---|---|
 | `principia.config.ts` | config | title, slide decks, shared identities, folder titles |
+| `principia.version.json` | version file | the notes format these notes are written in (written by the app) |
 | `identities.ts` | TypeScript | identities shared by every topic, such as $\nabla_{\mathbf w}(\mathbf w^\top A\mathbf w)=(A+A^\top)\mathbf w$ |
 | `lecture-1/…/*.ts` | structured topics | sections, derivation rows, identity tags, slide badges |
 | `lecture-1/…/07-ridge.tsx` | topic + component | an interactive widget placed inside a section with `extra` |

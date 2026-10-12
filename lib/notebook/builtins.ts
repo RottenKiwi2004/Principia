@@ -14,17 +14,24 @@ export const interop = (ns: object): Record<string, unknown> => {
   return { ...m, default: 'default' in m ? m.default : m, __esModule: true };
 };
 
+/** Imports of notes format 1, served by `principia` so old notes load unchanged. Upgrading rewrites them. */
+export const LEGACY_ALIASES = ['@/content/helpers', '@/content/types'];
+
 let cache: Record<string, unknown> | null = null;
 
 /** Built lazily: `principia` imports components that import this file, so it cannot be read at load time. */
 export function builtinModules() {
-  return (cache ??= {
+  if (cache) return cache;
+  const principia = interop(sdk);
+  cache = {
     react: interop(React),
     'react/jsx-runtime': interop(JsxRuntime),
     'react/jsx-dev-runtime': interop(JsxDevRuntime),
     'react-dom': interop(ReactDOM),
     'react-dom/client': interop(ReactDOMClient),
     katex: interop(katex),
-    principia: interop(sdk),
-  });
+    principia,
+  };
+  for (const alias of LEGACY_ALIASES) cache[alias] = principia;
+  return cache;
 }

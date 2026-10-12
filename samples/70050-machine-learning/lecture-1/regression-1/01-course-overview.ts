@@ -136,6 +136,7 @@ export const courseOverview: Topic = {
   id: 'course-overview',
   title: 'Course overview',
   short: 'Overview',
+  steps: 'section', // one whole section per step
   summary: 'What counts for marks (coursework 20%, exam 80%), the prerequisites and textbook, office hours, the eight-lecture schedule and the outline of Lecture 1.',
   sections,
 };

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { pickFolder, pickSample } from '@/lib/notebook/actions';
 import { useNotebooks } from '@/lib/notebook/hooks';
 import { listSamples } from '@/lib/notebook/store';
+import { APP_VERSION, FORMAT_VERSION } from '@/lib/version';
 
 /** Shown in the dock when no tab is open. */
 export function Welcome() {
@@ -47,7 +48,13 @@ export function Welcome() {
             <b>Anything else</b>: images, PDFs, video and audio are shown; HTML runs in a sandbox; other files show their text.
           </li>
         </ul>
-        <p className="welcome-note">Saved edits appear in a moment. Folders stay open across reloads (Chrome and Edge).</p>
+        <p className="welcome-note">
+          Saved edits appear in a moment. Folders stay open across reloads (Chrome and Edge). Notes written for an older
+          version are upgraded when they are opened, with a backup, and still open where they cannot be written.
+        </p>
+        <p className="welcome-note">
+          Principia {APP_VERSION} · notes format {FORMAT_VERSION}
+        </p>
       </div>
     </div>
   );

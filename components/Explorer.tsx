@@ -7,7 +7,8 @@ import { useNotebooks } from '@/lib/notebook/hooks';
 import { basename, folderTitle, type TopicEntry } from '@/lib/notebook/indexer';
 import { dirname } from '@/lib/notebook/loader';
 import type { FileEntry } from '@/lib/notebook/source';
-import { closeNotebook, listSamples, reconnect, refresh, type Notebook } from '@/lib/notebook/store';
+import { closeNotebook, listSamples, reconnect, refresh, upgradeNow, type Notebook } from '@/lib/notebook/store';
+import { APP_VERSION, FORMAT_VERSION } from '@/lib/version';
 import { activePanel, closePanelsOf, filePanelId, indexPanelId, openFile, openIndex, resetLayout } from '@/lib/workspace';
 
 const COLLAPSED_KEY = 'notes-explorer-collapsed-v2';
@@ -218,9 +219,14 @@ export function Explorer({ collapsed: railOnly, onToggle }: { collapsed: boolean
               Click a tag such as <code>I5</code> in a topic to open the Identity index beside it. Drag a tab to an edge to
               split, or onto another tab strip to merge. Saved edits reload by themselves.
             </p>
-            <button type="button" className="ex-reset" onClick={resetLayout}>
-              Reset layout
-            </button>
+            <div className="ex-foot-row">
+              <button type="button" className="ex-reset" onClick={resetLayout}>
+                Reset layout
+              </button>
+              <span className="ex-version" title={`Principia ${APP_VERSION}, notes format ${FORMAT_VERSION}`}>
+                v{APP_VERSION} · format {FORMAT_VERSION}
+              </span>
+            </div>
           </div>
         </>
       )}
@@ -262,7 +268,14 @@ function NotebookNode({ nb, collapsed, toggle, active }: { nb: Notebook } & Node
   return (
     <div role="group" className="ex-root">
       <div className="ex-root-row">
-        <FolderRow depth={0} title={nb.title} open={open} onClick={() => toggle(key)} strong />
+        <FolderRow
+          depth={0}
+          title={nb.title}
+          tooltip={`${nb.title}\nNotes format ${nb.format}${nb.versionFile ? `, last written by Principia ${nb.versionFile.app}` : ''}`}
+          open={open}
+          onClick={() => toggle(key)}
+          strong
+        />
         <span className="ex-root-actions">
           {nb.live && nb.status !== 'needs-permission' && (
             <button type="button" className="ex-side" title="Reload the folder" aria-label={`Reload ${nb.title}`} onClick={() => refresh(nb.id)}>
@@ -284,6 +297,16 @@ function NotebookNode({ nb, collapsed, toggle, active }: { nb: Notebook } & Node
           {nb.status === 'loading' && nb.version === 0 && <p className="ex-status">Loading…</p>}
           {nb.status === 'error' && <p className="ex-status is-error">{nb.error}</p>}
           {nb.kind === 'files' && nb.version > 0 && <p className="ex-status">A snapshot: edits on disk are not picked up.</p>}
+          {nb.notice && (
+            <div className={`ex-notice is-${nb.notice.level}`} role="status">
+              {nb.notice.text}
+              {nb.notice.action === 'upgrade' && (
+                <button type="button" className="btn" onClick={() => void upgradeNow(nb.id)}>
+                  Upgrade to format {FORMAT_VERSION}
+                </button>
+              )}
+            </div>
+          )}
           <DirChildren nb={nb} dir={tree} depth={1} collapsed={collapsed} toggle={toggle} active={active} />
           {nb.index.identities.length > 0 && (
             <FileRow
@@ -321,7 +344,8 @@ function DirChildren({ nb, dir, depth, ...p }: { nb: Notebook; dir: Dir; depth: 
   );
 }
 
-function FolderRow({ depth, title, open, onClick, strong }: { depth: number; title: string; open: boolean; onClick: () => void; strong?: boolean }) {
+function FolderRow(p: { depth: number; title: string; tooltip?: string; open: boolean; onClick: () => void; strong?: boolean }) {
+  const { depth, title, open, onClick, strong } = p;
   return (
     <button
       type="button"
@@ -330,7 +354,7 @@ function FolderRow({ depth, title, open, onClick, strong }: { depth: number; tit
       className={'ex-folder' + (strong ? ' is-course' : '')}
       style={{ paddingLeft: 6 + depth * 12 }}
       onClick={onClick}
-      title={title}
+      title={p.tooltip ?? title}
     >
       <Chevron open={open} />
       <FolderIcon open={open} />

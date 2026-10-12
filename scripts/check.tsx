@@ -16,6 +16,8 @@ import { comparePaths, sectionTags } from '../lib/notebook/indexer';
 import { ModuleGraph } from '../lib/notebook/loader';
 import { NodeSource } from '../lib/notebook/node-source';
 import { scanNotebook } from '../lib/notebook/scan';
+import { versionStatus, VERSION_FILE } from '../lib/notebook/migrate';
+import { APP_VERSION, FORMAT_VERSION } from '../lib/version';
 import type { Note } from '../sdk/types';
 
 const failures: string[] = [];
@@ -53,9 +55,18 @@ async function main() {
   const source = new NodeSource(folder);
   const files = (await source.list()).map((f) => f.path).sort(comparePaths);
   const graph = new ModuleGraph(source, files, { builtins: builtinModules });
-  const { config, index, errors } = await scanNotebook(graph, files);
+  const scan = await scanNotebook(graph, files);
+  const { config, index, errors } = scan;
   const title = config.title || source.name;
   for (const [path, e] of errors) failures.push(`${path}: does not load: ${e}`);
+
+  // ---- notes format -----------------------------------------------------------------------------
+  const status = await versionStatus(source, files, scan);
+  if (status.action === 'upgrade') warnings.push(`notes format ${status.format} (current: ${FORMAT_VERSION}), read in compatibility mode: run \`npm run upgrade -- ${folder}\``);
+  else if (status.action === 'stamp') warnings.push(`${VERSION_FILE} is missing or older than Principia ${APP_VERSION}: run \`npm run upgrade -- ${folder}\``);
+  else if (status.action === 'newer') warnings.push(`notes format ${status.format} is newer than this app (format ${FORMAT_VERSION}): some checks may be wrong`);
+  else if (status.problem) failures.push(status.problem);
+  else if (status.newerApp) warnings.push(`last written by Principia ${status.file?.app}, newer than this app (${APP_VERSION})`);
 
   // ---- pages: Markdown, MDX and components render without errors -----------------------------
   let pages = 0;
@@ -157,7 +168,7 @@ async function main() {
   if (idx.includes('katex-error')) failures.push('identity index has KaTeX errors');
 
   // ---- report ---------------------------------------------------------------------------------
-  console.log(`${title} (${folder}): ${files.length} files, ${index.topics.length} topics, ${pages} pages, ${index.identities.length} identities`);
+  console.log(`${title} (${folder}): notes format ${status.format}, ${files.length} files, ${index.topics.length} topics, ${pages} pages, ${index.identities.length} identities`);
   warnings.forEach((w) => console.warn('warning:', w));
   if (failures.length) {
     failures.forEach((f) => console.error('FAIL:', f));

@@ -357,7 +357,7 @@ button {
   position: absolute;
   inset: 0;
   overflow: auto;
-  padding: 20px clamp(10px, 2cqi, 28px) 40px;
+  padding: 20px clamp(10px, 2cqi, 28px) 80px; /* room for the step controls under the last line */
   background: var(--ground);
   container-type: inline-size;
 }
@@ -782,6 +782,108 @@ header .why-block {
   font-size: 0.92rem;
 }
 
+/* ---- step-by-step reveal (components/StepScope.tsx) ----------------------------------------- */
+[data-step-hidden] {
+  display: none !important;
+}
+[data-step-in] {
+  animation: step-in 0.38s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-step-in] {
+    animation: none;
+  }
+}
+/* Containers whose first step is still hidden would show only their margins and rules. */
+.sec:has(> .sec-head[data-step-hidden]),
+.rows:has(> .row:first-child[data-step-hidden]),
+.notes-inline:has(> :first-child[data-step-hidden]) {
+  display: none;
+}
+
+/* the step controls, over the bottom middle of the dock */
+.steps {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  border: 1px solid #3a4458;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  transform: translateX(-50%);
+  opacity: 0.82;
+  transition: opacity 0.2s;
+  user-select: none;
+}
+.steps:hover,
+.steps:focus-within {
+  opacity: 1;
+}
+.steps-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+.steps-btn:hover:not(:disabled) {
+  background: var(--flag-bg);
+  color: var(--purple);
+}
+.steps-btn:disabled {
+  color: var(--ink-2);
+  opacity: 0.4;
+  cursor: default;
+}
+.steps-sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: var(--rule);
+}
+.steps-note {
+  width: 34px;
+}
+.steps-count {
+  min-width: 4.6rem;
+  padding: 0 0.5rem;
+  color: var(--ink-2);
+  font: 13px/1 var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.steps-count b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.steps-title {
+  max-width: 14rem;
+  overflow: hidden;
+  padding: 0 0.5rem 0 0.6rem;
+  border-right: 1px solid var(--rule);
+  color: var(--ink-2);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ---- buttons ---------------------------------------------------------------------------- */
 .btn {
   padding: 0.35rem 0.75rem;
@@ -901,6 +1003,40 @@ header .why-block {
 }
 .ex-empty p {
   margin: 0 0 0.2rem;
+}
+.ex-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin: 0.2rem 0.6rem 0.4rem 1.6rem;
+  padding: 0.45rem 0.6rem;
+  border-left: 2px solid var(--teal);
+  background: var(--flag-bg);
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.ex-notice.is-warn {
+  border-color: var(--orange);
+}
+.ex-notice.is-error {
+  border-color: var(--red);
+  color: var(--red);
+}
+.ex-notice .btn {
+  font-size: 12px;
+}
+.ex-foot-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.ex-version {
+  color: var(--ink-2);
+  font: 11px var(--f-mono);
+  opacity: 0.8;
 }
 .ex-error-dot {
   flex: none;

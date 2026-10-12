@@ -21,6 +21,8 @@ export function useFocusScroll(focus: Focus, elementId: (id: string) => string |
       const el = document.getElementById(target);
       const panel = el?.closest<HTMLElement>('.panel');
       if (!el || !panel || panel.clientHeight === 0) return;
+      // If the target is still hidden in a step-by-step note, its StepScope reveals it first.
+      el.dispatchEvent(new CustomEvent('step-reveal', { bubbles: true }));
       const offset = el.getBoundingClientRect().top - panel.getBoundingClientRect().top + panel.scrollTop;
       const top = align === 'center' ? offset - (panel.clientHeight - el.offsetHeight) / 2 : offset - 12;
       panel.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
